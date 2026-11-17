@@ -1,4 +1,4 @@
-// Ajustes: dados da obra, listas editáveis, backup, armazenamento e modo demonstração.
+﻿// Ajustes: dados da obra, listas editáveis, backup, armazenamento e modo demonstração.
 import { h, campo, texto, modal, confirmar, perguntar, oferecerArquivo, carregando, toast } from '../ui.js';
 import { getConfig, salvarConfig, LISTAS, novoItem, areasDe } from '../config.js';
 import * as db from '../db.js';
@@ -6,7 +6,7 @@ import { gerarBackup, marcarBackup, lerBackup, aplicarBackup } from '../backup.j
 import { autosaver, fmtDataHora, diasEntre, hoje } from '../util.js';
 import { ir } from '../app.js';
 
-export const VERSAO_APP = '1.6.0';
+export const VERSAO_APP = '1.6.1';
 
 export async function viewAjustes() {
   const cfg = await getConfig();
