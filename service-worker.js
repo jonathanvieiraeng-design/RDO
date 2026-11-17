@@ -1,6 +1,6 @@
 ﻿// Service worker: cache-first de todos os assets. Ao alterar qualquer arquivo do app,
 // incremente VERSAO para que o iPhone baixe a nova versão na próxima abertura com internet.
-const VERSAO = 'rdo-rov-v1.6.1';
+const VERSAO = 'rdo-rov-v1.6.2';
 const ASSETS = [
   './',
   './index.html',
@@ -15,9 +15,10 @@ const ASSETS = [
   './fonts/Poppins-SemiBold.ttf',
   './fonts/Poppins-Bold.ttf',
   './assets/logo-arcoirismar.png',
-  './icons/icon-180.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  './apple-touch-icon.png',
+  './icons/rdo-icone-180.png',
+  './icons/rdo-icone-192.png',
+  './icons/rdo-icone-512.png',
   './js/app.js',
   './js/util.js',
   './js/db.js',
