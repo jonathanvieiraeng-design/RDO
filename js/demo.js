@@ -29,7 +29,7 @@ export async function semearDemo() {
     tempo: { manha: 'Sol', tarde: 'Nublado', paralisacao: 'Não', paralisacaoObs: '' },
     efetivo: { fun_1: { presente: 1, faltas: 0, obs: '' }, fun_5: { presente: 1, faltas: 0, obs: '' }, fun_8: { presente: 4, faltas: 1, obs: '1 atestado' }, fun_9: { presente: 6, faltas: 0, obs: '' } },
     subcontratadas: {}, equipamentos: { eqp_7: { qtd: 1 } },
-    servicos: [{ id: uid(), areaId: 'pav_2', descricao: 'Limpeza do terreno com escavadeira: remoção de alvenaria e de fragmentos de vigas remanescentes da construção pré-existente, junto ao muro divisório dos fundos.', situacao: 'Em andamento', fotos: [] }],
+    servicos: [{ id: uid(), areaIds: ['pav_2'], descricao: 'Limpeza do terreno com escavadeira: remoção de alvenaria e de fragmentos de vigas remanescentes da construção pré-existente, junto ao muro divisório dos fundos.', situacao: 'Em andamento', fotos: [] }],
     fiscalizacao: '', ocorrencias: 'Contato da vizinha Marisa (fundos) sobre vibração durante a operação da escavadeira — ver ROV-001.', producao: '', fotos: [],
     copiadoDe: null, fechadoEm: '2026-06-16T18:00:00-03:00',
     rovSnapshot: [resumoROV(rov, cfg, await mapaVizinhos())], cfgSnapshot: structuredClone(cfg),

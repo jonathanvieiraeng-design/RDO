@@ -3,7 +3,7 @@ import * as db from './db.js';
 import {
   fmtBR, fmtDataHora, diaSemana, diasDecorridos, diasRestantes, fmtDias, pad, bufferParaBase64, blobParaDataURL, nowISO
 } from './util.js';
-import { nomeItem } from './config.js';
+import { nomeItem, areasDe, nomesAreas } from './config.js';
 import { totaisEfetivo } from './rdo.js';
 
 const M = 15, PW = 210, PH = 297, CW = PW - 2 * M;
@@ -347,7 +347,7 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
     s.fotos.forEach((f) => {
       const numero = fotosPdf.length + 1;
       nums.push(numero);
-      const area = nomeItem(cfg, 'pavimentos', s.areaId);
+      const area = nomesAreas(cfg, s);
       fotosPdf.push({ ...f, numero, legenda: f.legenda || [area, (s.descricao || '').split('\n')[0].slice(0, 70)].filter(Boolean).join(' – ') });
     });
     refFotos.set(s, nums);
@@ -360,14 +360,17 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
   if (servs.length) {
     const ordem = cfg.listas.pavimentos.map((p) => p.id);
     const grupos = new Map();
-    for (const s of servs) { const k = s.areaId || ''; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(s); }
+    const pos = (id) => { const i = ordem.indexOf(id); return i < 0 ? 9998 : i; };
+    // Serviços no mesmo conjunto de pavimentos ficam juntos; conjuntos ordenados pelo primeiro pavimento.
+    for (const s of servs) { const k = [...areasDe(s)].sort((a, b) => pos(a) - pos(b)).join('|'); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(s); }
     const chaves = [...grupos.keys()].sort((a, b) => {
-      const ia = a ? ordem.indexOf(a) : 9999, ib = b ? ordem.indexOf(b) : 9999;
-      return (ia < 0 ? 9998 : ia) - (ib < 0 ? 9998 : ib);
+      const pa = a ? a.split('|').map(pos) : [9999], pb = b ? b.split('|').map(pos) : [9999];
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] ?? -1) - (pb[i] ?? -1); if (d) return d; }
+      return 0;
     });
     const linhas = [];
     for (const k of chaves) {
-      linhas.push({ c: [k ? nomeItem(cfg, 'pavimentos', k) : 'Área não informada'], span: true, negrito: true, fundo: C.fundo2 });
+      linhas.push({ c: [k ? nomesAreas(cfg, { areaIds: k.split('|') }) : 'Área não informada'], span: true, negrito: true, fundo: C.fundo2 });
       for (const s of grupos.get(k)) {
         const nums = refFotos.get(s) || [];
         const ref = nums.length ? `\n(ver ${nums.map((n) => 'Foto ' + pad(n)).join(', ')})` : '';

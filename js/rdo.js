@@ -2,6 +2,7 @@
 import * as db from './db.js';
 import { nowISO, uid, pad, slugArquivo } from './util.js';
 import { rovsDoDia, mapaVizinhos, resumoROV } from './rov.js';
+import { areasDe } from './config.js';
 
 export function nomeArquivoRDO(rdo, cfg) {
   const sigla = slugArquivo(cfg.siglaArquivo || cfg.nome);
@@ -101,7 +102,7 @@ export function checklist(rdo) {
   if (!rdo.servicos.length) p.push('Serviços executados – nenhum item');
   rdo.servicos.forEach((s, i) => {
     if (!s.descricao.trim()) p.push(`Serviço ${i + 1} – sem descrição`);
-    if (!s.areaId) p.push(`Serviço ${i + 1} – sem área/pavimento`);
+    if (!areasDe(s).length) p.push(`Serviço ${i + 1} – sem área/pavimento`);
     if (!s.situacao) p.push(`Serviço ${i + 1} – sem situação`);
   });
   if (!rdo.fiscalizacao.trim()) p.push('Observações da fiscalização');

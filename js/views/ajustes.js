@@ -1,12 +1,12 @@
 // Ajustes: dados da obra, listas editáveis, backup, armazenamento e modo demonstração.
 import { h, campo, texto, modal, confirmar, perguntar, oferecerArquivo, carregando, toast } from '../ui.js';
-import { getConfig, salvarConfig, LISTAS, novoItem } from '../config.js';
+import { getConfig, salvarConfig, LISTAS, novoItem, areasDe } from '../config.js';
 import * as db from '../db.js';
 import { gerarBackup, marcarBackup, lerBackup, aplicarBackup } from '../backup.js';
 import { autosaver, fmtDataHora, diasEntre, hoje } from '../util.js';
 import { ir } from '../app.js';
 
-export const VERSAO_APP = '1.3.0';
+export const VERSAO_APP = '1.4.0';
 
 export async function viewAjustes() {
   const cfg = await getConfig();
@@ -98,7 +98,7 @@ export async function viewAjustes() {
 async function itemUsado(lista, id) {
   if (lista === 'assuntos') return (await db.all('rovs')).some((r) => r.assuntoId === id);
   const rdos = await db.all('rdos');
-  if (lista === 'pavimentos') return rdos.some((r) => r.servicos.some((s) => s.areaId === id));
+  if (lista === 'pavimentos') return rdos.some((r) => r.servicos.some((s) => areasDe(s).includes(id)));
   const campo = { funcoes: 'efetivo', subcontratadas: 'subcontratadas', equipamentos: 'equipamentos' }[lista];
   return rdos.some((r) => r[campo] && id in r[campo]);
 }

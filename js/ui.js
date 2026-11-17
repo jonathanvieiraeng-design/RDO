@@ -69,6 +69,22 @@ export function segmentado(opcoes, valor, onChange, { readonly = false, chips = 
   return wrap;
 }
 
+/** Seleção múltipla em botões (liga/desliga cada um). opcoes: {id,nome}[]. Devolve os ids na ordem das opções. */
+export function multiSelecao(opcoes, valores, onChange, { chips = true } = {}) {
+  const sel = new Set(valores || []);
+  const wrap = h('div', { class: chips ? 'chips' : 'seg' });
+  const render = () => wrap.replaceChildren(...opcoes.map((o) => h('button', {
+    type: 'button', class: 'opc' + (sel.has(o.id) ? ' sel' : ''), 'aria-pressed': String(sel.has(o.id)),
+    onclick: () => {
+      if (sel.has(o.id)) sel.delete(o.id); else sel.add(o.id);
+      render();
+      onChange(opcoes.map((x) => x.id).filter((id) => sel.has(id)));
+    }
+  }, sel.has(o.id) ? '✓ ' + o.nome : o.nome)));
+  render();
+  return wrap;
+}
+
 /** textarea que cresce com o conteúdo (compatível com ditado do iOS). */
 export function areaTexto(valor, onChange, { readonly = false, placeholder = '', linhas = 3 } = {}) {
   const t = h('textarea', { class: 'txt', rows: String(linhas), placeholder, readOnly: readonly, value: valor || '' });

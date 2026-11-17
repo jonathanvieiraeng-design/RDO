@@ -56,7 +56,7 @@ async function migrarListas(c) {
   if ((c.migracao || 0) >= 1) return false;
   const rdos = await db.all('rdos');
   const usado = (k, id) => k === 'pavimentos'
-    ? rdos.some((r) => (r.servicos || []).some((s) => s.areaId === id))
+    ? rdos.some((r) => (r.servicos || []).some((s) => areasDe(s).includes(id)))
     : rdos.some((r) => r[k === 'funcoes' ? 'efetivo' : 'equipamentos'] && id in r[k === 'funcoes' ? 'efetivo' : 'equipamentos']);
   const pad = listasPadrao();
   for (const k of Object.keys(RETIRADOS)) {
@@ -118,4 +118,16 @@ export function nomeItem(cfg, lista, id) {
 /** Itens visíveis + itens ocultos que já estão em uso no registro atual. */
 export function itensPara(cfg, lista, usados = []) {
   return cfg.listas[lista].filter((i) => !i.oculto || usados.includes(i.id));
+}
+
+/** Pavimentos de um serviço (um serviço pode abranger vários). Aceita o formato antigo (areaId único). */
+export function areasDe(s) {
+  if (Array.isArray(s?.areaIds)) return s.areaIds;
+  return s?.areaId ? [s.areaId] : [];
+}
+/** Nomes dos pavimentos de um serviço, na ordem da lista. Ex.: "1º Pav, 4º Pav, 5º Pav". */
+export function nomesAreas(cfg, s) {
+  const ordem = (cfg?.listas?.pavimentos || []).map((p) => p.id);
+  const pos = (id) => { const i = ordem.indexOf(id); return i < 0 ? 9999 : i; };
+  return [...areasDe(s)].sort((a, b) => pos(a) - pos(b)).map((id) => nomeItem(cfg, 'pavimentos', id)).join(', ');
 }

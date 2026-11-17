@@ -1,6 +1,6 @@
 // Editor do RDO (também usado em modo somente leitura para RDOs fechados).
-import { h, campo, stepper, segmentado, areaTexto, texto, secao, galeria, confirmar, toast } from '../ui.js';
-import { TEMPO, SITUACOES, itensPara, nomeItem } from '../config.js';
+import { h, campo, stepper, segmentado, multiSelecao, areaTexto, texto, secao, galeria, confirmar, toast } from '../ui.js';
+import { TEMPO, SITUACOES, itensPara, nomeItem, areasDe, nomesAreas } from '../config.js';
 import { salvarRDO, progresso, totaisEfetivo, ultimoAnterior } from '../rdo.js';
 import { autosaver, uid, pad, fmtBR, diaSemana, diasDecorridos, diasRestantes, fmtDias, fmtDataHora } from '../util.js';
 
@@ -99,9 +99,9 @@ export function editorRDO(rdo, cfg, { readonly = false, rovsDia = [] } = {}) {
         type: 'button', class: 'btn link perigo-txt',
         onclick: async () => { if (await confirmar(`Remover o serviço ${i + 1}?`, '', 'Remover', true)) { rdo.servicos.splice(i, 1); mudou(); renderServicos(); } }
       }, 'Remover')),
-    campo('Área / pavimento', readonly
-      ? h('p', null, nomeItem(cfgUso, 'pavimentos', s.areaId) || '—')
-      : segmentado(itensPara(cfgUso, 'pavimentos', [s.areaId]), s.areaId, (v) => { s.areaId = v; mudou(); }, { chips: true })),
+    campo(readonly ? 'Área / pavimento' : 'Área / pavimento (toque em um ou mais)', readonly
+      ? h('p', null, nomesAreas(cfgUso, s) || '—')
+      : multiSelecao(itensPara(cfgUso, 'pavimentos', areasDe(s)), areasDe(s), (v) => { s.areaIds = v; delete s.areaId; mudou(); })),
     campo('Descrição do serviço', readonly ? h('p', { class: 'pre' }, s.descricao || '—')
       : areaTexto(s.descricao, (v) => { s.descricao = v; mudou(); }, { placeholder: 'Descreva (pode usar o microfone do teclado)' })),
     readonly ? null : campo('Situação', segmentado(SITUACOES, s.situacao, (v) => { s.situacao = v; mudou(); })),
@@ -113,7 +113,7 @@ export function editorRDO(rdo, cfg, { readonly = false, rovsDia = [] } = {}) {
       readonly ? null : h('div', { class: 'acoes' },
         h('button', {
           type: 'button', class: 'btn', onclick: () => {
-            rdo.servicos.push({ id: uid(), areaId: null, descricao: '', situacao: null, fotos: [] });
+            rdo.servicos.push({ id: uid(), areaIds: [], descricao: '', situacao: null, fotos: [] });
             mudou(); renderServicos();
             const tas = srvCont.querySelectorAll('textarea');
             tas[tas.length - 1]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -125,7 +125,7 @@ export function editorRDO(rdo, cfg, { readonly = false, rovsDia = [] } = {}) {
     const ant = await ultimoAnterior(rdo.data);
     if (!ant || !ant.servicos.length) { toast('Não há serviços em RDO anterior.'); return; }
     if (!(await confirmar(`Copiar ${ant.servicos.length} serviço(s) do RDO de ${fmtBR(ant.data)}?`, rdo.servicos.length ? 'Serão adicionados aos serviços já lançados. As fotos não são copiadas.' : 'As fotos não são copiadas.', 'Copiar'))) return;
-    for (const s of ant.servicos) rdo.servicos.push({ id: uid(), areaId: s.areaId, descricao: s.descricao, situacao: s.situacao, fotos: [] });
+    for (const s of ant.servicos) rdo.servicos.push({ id: uid(), areaIds: [...areasDe(s)], descricao: s.descricao, situacao: s.situacao, fotos: [] });
     mudou(); renderServicos();
   }
   renderServicos();
