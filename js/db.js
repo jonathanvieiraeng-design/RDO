@@ -75,3 +75,18 @@ export async function substituirTudo(dados) {
   }
   return txFim(tx);
 }
+
+/** Apaga TODOS os dados deste app no aparelho (real e demonstração). Não toca em dados de outros apps do mesmo site. */
+export async function apagarTudo() {
+  if (dbp) { try { (await dbp).close(); } catch { /* ok */ } dbp = null; }
+  for (const nome of ['rdo-rov', 'rdo-rov-demo']) {
+    await new Promise((res, rej) => {
+      const r = indexedDB.deleteDatabase(nome);
+      r.onsuccess = () => res();
+      r.onerror = () => rej(r.error);
+      r.onblocked = () => res();
+    });
+  }
+  try { for (const k of Object.keys(localStorage)) if (k.startsWith('rdo-')) localStorage.removeItem(k); } catch { /* ok */ }
+  try { sessionStorage.removeItem('rov-filtros'); } catch { /* ok */ }
+}

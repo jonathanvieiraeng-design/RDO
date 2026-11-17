@@ -6,7 +6,7 @@ import { gerarBackup, marcarBackup, lerBackup, aplicarBackup } from '../backup.j
 import { autosaver, fmtDataHora, diasEntre, hoje } from '../util.js';
 import { ir } from '../app.js';
 
-export const VERSAO_APP = '1.2.0';
+export const VERSAO_APP = '1.3.0';
 
 export async function viewAjustes() {
   const cfg = await getConfig();
@@ -76,6 +76,20 @@ export async function viewAjustes() {
           location.reload();
         }
       }, db.modoDemo() ? 'Desligar demonstração' : 'Ligar demonstração')),
+    h('div', { class: 'card' }, h('h3', null, 'Apagar todos os dados'),
+      h('p', { class: 'nota' }, 'Remove do aparelho todos os RDOs, ROVs, vizinhos, fotos, PDFs e ajustes (dados reais e de demonstração). A numeração volta para nº 001 e ROV-001. Use só para limpar testes. Não pode ser desfeito: exporte um backup antes se precisar de algo.'),
+      h('button', {
+        type: 'button', class: 'btn perigo', onclick: async () => {
+          const r = await perguntar('Apagar todos os dados?', { rotulo: 'Digite APAGAR para confirmar', obrigatorio: true, multilinha: false, ok: 'Apagar tudo' });
+          if (r == null) return;
+          if (String(r).trim().toUpperCase() !== 'APAGAR') { alert('Confirmação incorreta. Nada foi apagado.'); return; }
+          await saver.flush();
+          const fim = carregando('Apagando…');
+          try { await db.apagarTudo(); } catch (e) { fim(); alert('Falha ao apagar: ' + e.message); return; }
+          location.hash = '#/hoje';
+          location.reload();
+        }
+      }, '🗑️ Apagar todos os dados')),
     h('p', { class: 'nota centro' }, `Construtora Arco-Íris-Mar · RDO + ROV v${VERSAO_APP} · funciona offline · fontes Carlito, Open Sans e Poppins (OFL)`));
   return { titulo: 'Ajustes', aba: 'ajustes', el, saver };
 }
