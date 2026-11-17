@@ -9,6 +9,7 @@ import { hoje, fmtBR, diaSemana, somaDias, pad, fmtDataHora } from '../util.js';
 import { editorRDO, blocoVizinhanca } from './rdoEditor.js';
 import { ir, rerender } from '../app.js';
 import { baixarArquivo, enviarArquivo } from '../destino.js';
+import { verPdf } from '../visualizador.js';
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const MESES_CURTOS = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
@@ -117,7 +118,7 @@ export async function viewHoje(dataParam) {
         try {
           const blob = await gerarPdfRDO({ ...rdo, status: 'aberto' }, cfg, await rovsAoVivo(rdo.data, cfg));
           fim();
-          await oferecerArquivo(blob, `PREVIA_RDO_${rdo.data}.pdf`, 'Prévia do PDF', 'Rascunho, sem validade.');
+          await verPdf(blob, `PREVIA_RDO_${rdo.data}.pdf`, { aviso: 'Prévia — rascunho, sem validade. Para o documento oficial, use "Gerar PDF".' });
         } catch (e) { fim(); alert('Erro ao gerar PDF: ' + e.message); }
       }
     }, 'Prévia'),
@@ -186,7 +187,8 @@ export async function viewRdoDetalhe(id) {
         pdf ? h('p', { class: 'arquivo-nome' }, '📄 ', pdf.nome) : h('p', { class: 'erro' }, 'Erro ao gerar PDF: ' + erro),
         h('div', { class: 'acoes' },
           pdf ? h('button', { type: 'button', class: 'btn primario', onclick: () => { enviarArquivo(pdf.blob, pdf.nome); } }, 'Compartilhar…') : null,
-          pdf ? h('button', { type: 'button', class: 'btn', onclick: () => baixarArquivo(pdf.blob, pdf.nome) }, 'Abrir PDF') : null)
+          pdf ? h('button', { type: 'button', class: 'btn', onclick: () => verPdf(pdf.blob, pdf.nome) }, '👁 Ver PDF') : null,
+          pdf ? h('button', { type: 'button', class: 'btn', onclick: () => baixarArquivo(pdf.blob, pdf.nome) }, 'Baixar') : null)
       ],
     h('a', { class: 'btn', href: `#/hoje/${rdo.data}`, style: 'width:100%;margin-top:6px' }, '✎ Abrir para editar'));
   return { titulo: `RDO nº ${pad(rdo.numero, 3)}`, voltar: true, aba: 'historico', el: h('div', null, acoes, el) };

@@ -1,6 +1,6 @@
-﻿// Service worker: cache-first de todos os assets. Ao alterar qualquer arquivo do app,
+// Service worker: cache-first de todos os assets. Ao alterar qualquer arquivo do app,
 // incremente VERSAO para que o iPhone baixe a nova versão na próxima abertura com internet.
-const VERSAO = 'rdo-rov-v1.6.2';
+const VERSAO = 'rdo-rov-v1.7.0';
 const ASSETS = [
   './',
   './index.html',
@@ -34,7 +34,10 @@ const ASSETS = [
   './js/views/rdoEditor.js',
   './js/views/historico.js',
   './js/views/vizinhos.js',
-  './js/views/ajustes.js'
+  './js/views/ajustes.js',
+  './js/visualizador.js',
+  './vendor/pdf.min.mjs',
+  './vendor/pdf.worker.min.mjs'
 ];
 
 self.addEventListener('install', (e) => {

@@ -166,7 +166,8 @@ export function oferecerArquivo(blob, nome, titulo = 'Arquivo pronto', msg = '')
     corpo: h('div', null, msg ? h('p', null, msg) : null, h('p', { class: 'arquivo-nome' }, '📄 ', nome),
       !share ? h('p', { class: 'nota' }, 'Este navegador não permite compartilhar arquivos; use "Baixar".') : null),
     botoes: [
-      share ? { texto: 'Compartilhar…', classe: 'primario', acao: () => { enviarArquivo(blob, nome, tipo); } } : null,
+      tipo === 'application/pdf' ? { texto: '👁 Ver aqui', classe: 'primario', acao: () => { import('./visualizador.js').then((m) => m.verPdf(blob, nome)); } } : null,
+      share ? { texto: 'Compartilhar…', classe: tipo === 'application/pdf' ? '' : 'primario', acao: () => { enviarArquivo(blob, nome, tipo); } } : null,
       { texto: share ? 'Abrir / baixar' : 'Baixar', classe: share ? '' : 'primario', acao: () => baixarArquivo(blob, nome) },
       { texto: 'Fechar', valor: true }
     ].filter(Boolean)
@@ -218,7 +219,9 @@ function botoesFoto(onArquivos) {
     try { await onArquivos(files); } catch (err) { alert(err.message); } finally { fim(); }
   };
   return h('div', { class: 'fotos-botoes' },
-    h('label', { class: 'btn' }, '📷 Câmera', h('input', { type: 'file', accept: 'image/*', capture: 'environment', class: 'oculto-input', onchange: handler })),
+    // Sem o atributo capture: no iOS ele abre a câmera direto e, em alguns casos (Chrome, app instalado), a tela fica preta.
+    // Assim o iOS mostra o menu nativo (Tirar Foto / Fototeca / Arquivos), que funciona em todos os navegadores.
+    h('label', { class: 'btn' }, '📷 Câmera', h('input', { type: 'file', accept: 'image/*', class: 'oculto-input', onchange: handler })),
     h('label', { class: 'btn' }, '🖼️ Galeria / prints', h('input', { type: 'file', accept: 'image/*', multiple: true, class: 'oculto-input', onchange: handler })));
 }
 
