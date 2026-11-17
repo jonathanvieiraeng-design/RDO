@@ -1,6 +1,6 @@
 # RDO + ROV: Diário de Obra e Ocorrências com Vizinhos (PWA)
 
-App pessoal e 100% offline para iPhone. Gera o **RDO** diário e registra os **ROVs** (contatos com vizinhos), com PDF no padrão neutro da construtora (Carlito, compatível com Calibri, em tons de cinza).
+App pessoal e 100% offline para iPhone, com a identidade da **Construtora Arco-Íris-Mar** (azul-marinho #0B426D, dourado #C3A559, Poppins nos títulos, Open Sans no texto, logo no topo e no cabeçalho dos PDFs). Gera o **RDO** diário e registra os **ROVs** (contatos com vizinhos), com PDF no padrão neutro da construtora (Carlito, compatível com Calibri, em tons de cinza).
 
 ## Estrutura
 
@@ -23,7 +23,8 @@ app/
 │   ├── ui.js             componentes (contador, botões de seleção, fotos, modais)
 │   └── views/            hoje, rdoEditor, historico, vizinhos, ajustes
 ├── vendor/jspdf.umd.min.js   jsPDF 2.5.1 (MIT), local
-├── fonts/Carlito-*.ttf       Carlito (SIL OFL, ver fonts/OFL.txt), local
+├── fonts/                    Carlito (PDF), Open Sans e Poppins (telas), todas SIL OFL
+├── assets/logo-arcoirismar.png  logo da construtora
 └── icons/
 ```
 

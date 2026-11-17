@@ -1,4 +1,4 @@
-// Geração de PDF (A4 retrato, margens 15 mm, Carlito embutida, tons de cinza).
+// Geração de PDF (A4 retrato, margens 15 mm, Carlito embutida, tons de cinza, logo da Arco-Íris-Mar no cabeçalho).
 import * as db from './db.js';
 import {
   fmtBR, fmtDataHora, diaSemana, diasDecorridos, diasRestantes, fmtDias, pad, bufferParaBase64, blobParaDataURL, nowISO
@@ -30,8 +30,35 @@ async function carregarFontes() {
   return fontes;
 }
 
+// Logo da construtora: PNG transparente convertido em JPEG sobre branco (o jsPDF guardaria o PNG sem compressão).
+const LOGO_W = 36, LOGO_H = LOGO_W * 190 / 1250;
+const OURO = [195, 165, 89];
+let logo;
+async function carregarLogo() {
+  if (logo !== undefined) return logo;
+  try {
+    const img = await new Promise((ok, falha) => {
+      const i = new Image();
+      i.onload = () => ok(i);
+      i.onerror = () => falha(new Error('logo não encontrada'));
+      i.src = 'assets/logo-arcoirismar.png';
+    });
+    const c = document.createElement('canvas');
+    c.width = 750; c.height = Math.round(750 * img.naturalHeight / img.naturalWidth);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    logo = c.toDataURL('image/jpeg', 0.92);
+  } catch (e) {
+    console.warn('Logo indisponível no PDF', e);
+    logo = null;
+  }
+  return logo;
+}
+
 class Doc {
-  constructor(f) {
+  constructor(f, lg = null) {
+    this.logo = lg;
     const { jsPDF } = window.jspdf;
     this.doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
     this.fam = 'helvetica';
@@ -208,16 +235,27 @@ class Doc {
     const n = this.doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
       this.doc.setPage(i);
+      let xt = M;
+      if (this.logo) {
+        this.doc.addImage(this.logo, 'JPEG', M, M + 4.7 - LOGO_H / 2, LOGO_W, LOGO_H, 'logo', 'FAST');
+        xt = M + LOGO_W + 4;
+        this.doc.setDrawColor(C.linha); this.doc.setLineWidth(0.2);
+        this.doc.line(xt - 2, M + 0.3, xt - 2, M + 8.3);
+      }
       this.f('bold', 9);
-      this.doc.text(cab.esq, M, M + 3);
+      this.doc.text(cab.esq, xt, M + 3);
       this.f('normal', 8.5, C.medio);
       if (cab.dir) this.doc.text(cab.dir, PW - M, M + 3, { align: 'right' });
-      if (cab.esq2) this.doc.text(cab.esq2, M, M + 7.2);
       if (cab.dir2) this.doc.text(cab.dir2, PW - M, M + 7.2, { align: 'right' });
-      this.doc.setDrawColor(C.claro); this.doc.setLineWidth(0.3);
+      if (cab.esq2) {
+        const livre = PW - M - xt - (cab.dir2 ? this.doc.getTextWidth(cab.dir2) + 4 : 0);
+        this.doc.text(this.quebra(cab.esq2, livre)[0] || '', xt, M + 7.2);
+      }
+      this.doc.setDrawColor(...OURO); this.doc.setLineWidth(0.6);
       this.doc.line(M, M + 9.5, PW - M, M + 9.5);
 
       const yr = PH - M - 7;
+      this.doc.setDrawColor(C.claro); this.doc.setLineWidth(0.3);
       this.doc.line(M, yr, PW - M, yr);
       this.f('normal', 8, C.medio);
       this.doc.text(rod.l1, M, yr + 3.8);
@@ -239,7 +277,7 @@ const demo = () => db.modoDemo();
 // PDF do RDO
 // =====================================================================
 export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
-  const d = new Doc(await carregarFontes());
+  const d = new Doc(await carregarFontes(), await carregarLogo());
   const num = pad(rdo.numero, 3);
   const rev = rdo.rev ? `Rev. ${pad(rdo.rev)}` : '';
   const dec = diasDecorridos(cfg, rdo.data), rest = diasRestantes(cfg, rdo.data);
@@ -382,7 +420,7 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
 // PDF do ROV (período filtrado)
 // =====================================================================
 export async function gerarPdfROV(rovs, { ini, fim }, cfg, vizinhos) {
-  const d = new Doc(await carregarFontes());
+  const d = new Doc(await carregarFontes(), await carregarLogo());
   const emissao = nowISO();
   const periodo = `${fmtBR(ini)} a ${fmtBR(fim)}`;
 

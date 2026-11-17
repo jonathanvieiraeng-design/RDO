@@ -6,7 +6,7 @@ import { gerarBackup, marcarBackup, lerBackup, aplicarBackup } from '../backup.j
 import { autosaver, fmtDataHora, diasEntre, hoje } from '../util.js';
 import { ir } from '../app.js';
 
-export const VERSAO_APP = '1.0.0';
+export const VERSAO_APP = '1.1.0';
 
 export async function viewAjustes() {
   const cfg = await getConfig();
@@ -76,7 +76,7 @@ export async function viewAjustes() {
           location.reload();
         }
       }, db.modoDemo() ? 'Desligar demonstração' : 'Ligar demonstração')),
-    h('p', { class: 'nota centro' }, `RDO + ROV v${VERSAO_APP} · funciona offline · fonte Carlito (OFL)`));
+    h('p', { class: 'nota centro' }, `Construtora Arco-Íris-Mar · RDO + ROV v${VERSAO_APP} · funciona offline · fontes Carlito, Open Sans e Poppins (OFL)`));
   return { titulo: 'Ajustes', aba: 'ajustes', el, saver };
 }
 
