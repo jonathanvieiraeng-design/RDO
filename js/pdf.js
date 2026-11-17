@@ -353,6 +353,18 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
     refFotos.set(s, nums);
   });
   rdo.fotos.forEach((f) => fotosPdf.push({ ...f, numero: fotosPdf.length + 1 }));
+  // Evidências dos ROVs do dia (prints, fotos) entram no registro fotográfico do RDO.
+  const rovsPdf = rdo.rovSnapshot || rovsAoVivo || [];
+  const refRov = new Map();
+  for (const r of rovsPdf) {
+    const nums = [];
+    for (const f of r.fotos || []) {
+      const numero = fotosPdf.length + 1;
+      nums.push(numero);
+      fotosPdf.push({ ...f, numero, legenda: [r.codigo, f.legenda || 'evidência'].filter(Boolean).join(' – ') });
+    }
+    refRov.set(r, nums);
+  }
 
   // 5. Serviços
   d.tituloSecao('Serviços executados');
@@ -388,7 +400,7 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
 
   // 7. Vizinhança
   d.tituloSecao('Ocorrências de vizinhança do dia');
-  const rovs = rdo.rovSnapshot || rovsAoVivo || [];
+  const rovs = rovsPdf;
   if (!rovs.length) d.paragrafo('Sem ocorrências de vizinhança registradas.', { tam: 9.5 });
   for (const r of rovs) {
     d.tabela([{ t: '', w: 0.2 }, { t: '', w: 0.8 }], [
@@ -396,12 +408,14 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
       ['Tipo / assunto', [r.tipo, r.assunto].filter(Boolean).join(' / ') || '—'],
       ['Status', r.cancelado ? `Cancelado – ${r.cancelado}` : r.status],
       ['Descrição', r.descricao],
-      ['Esclarecimento / ação', r.acao]
+      ['Esclarecimento / ação', r.acao],
+      ...((refRov.get(r) || []).length ? [['Evidências', (refRov.get(r)).map((n) => 'Foto ' + pad(n)).join(', ') + ' (ver registro fotográfico)']] : [])
     ], { cabecalho: false, tam: 9 });
   }
 
   // 8. Fotos
   if (fotosPdf.length) {
+    d.garante(95); // título junto com a primeira linha de fotos
     d.tituloSecao('Registro fotográfico');
     await d.fotos(fotosPdf);
   }

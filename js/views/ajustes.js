@@ -6,7 +6,7 @@ import { gerarBackup, marcarBackup, lerBackup, aplicarBackup } from '../backup.j
 import { autosaver, fmtDataHora, diasEntre, hoje } from '../util.js';
 import { ir } from '../app.js';
 
-export const VERSAO_APP = '1.7.0';
+export const VERSAO_APP = '1.7.1';
 
 export async function viewAjustes() {
   const cfg = await getConfig();

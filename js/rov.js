@@ -25,6 +25,10 @@ export async function salvarROV(rov) {
     rov.historico.unshift({ em: rov.criadoEm, de: null, para: rov.status, nota: 'Registro criado' });
   }
   rov.atualizadoEm = nowISO();
+  // O PDF do RDO do dia inclui este ROV: se já foi gerado, passa a precisar de nova versão.
+  for (const r of await db.porIndice('rdos', 'data', rov.data)) {
+    if ((r.status === 'gerado' || r.status === 'fechado') && !r.alteradoAposPdf) { r.alteradoAposPdf = true; await db.put('rdos', r); }
+  }
   await db.put('rovs', rov);
   return rov;
 }
@@ -90,7 +94,8 @@ export function resumoROV(r, cfg, vizinhos) {
     vizinho: v?.nome || '', endereco: v?.endereco || '',
     canal: r.canal, tipo: r.tipo, assunto: nomeItem(cfg, 'assuntos', r.assuntoId),
     status: r.status, descricao: r.descricao, acao: r.acao,
-    cancelado: r.cancelado ? r.cancelado.motivo : null
+    cancelado: r.cancelado ? r.cancelado.motivo : null,
+    fotos: (r.fotos || []).map((x) => ({ fotoId: x.fotoId, legenda: x.legenda || '' }))
   };
 }
 
