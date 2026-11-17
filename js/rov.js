@@ -93,3 +93,20 @@ export function resumoROV(r, cfg, vizinhos) {
     cancelado: r.cancelado ? r.cancelado.motivo : null
   };
 }
+
+/** Apaga o ROV sem deixar rastro: registro, fotos e o resumo guardado nos RDOs. Se era o último nº, ele volta a ficar livre. */
+export async function apagarROV(rov) {
+  await db.del('rovs', rov.id);
+  for (const f of rov.fotos || []) await db.del('fotos', f.fotoId);
+  if (rov.seq) {
+    const seq = await db.getMeta('seq_rov');
+    if (seq === rov.seq) await db.setMeta('seq_rov', seq - 1);
+  }
+  for (const r of await db.all('rdos')) {
+    if (!r.rovSnapshot?.some((x) => x.id === rov.id)) continue;
+    r.rovSnapshot = r.rovSnapshot.filter((x) => x.id !== rov.id);
+    if (r.status === 'gerado' || r.status === 'fechado') r.alteradoAposPdf = true;
+    await db.del('pdfs', r.id);
+    await db.put('rdos', r);
+  }
+}

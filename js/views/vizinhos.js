@@ -2,7 +2,7 @@
 import { h, campo, segmentado, areaTexto, texto, galeria, modal, confirmar, perguntar, oferecerArquivo, carregando, toast } from '../ui.js';
 import { getConfig, CANAIS, TIPOS_ROV, STATUS_ROV, itensPara, nomeItem } from '../config.js';
 import * as db from '../db.js';
-import { novoROV, salvarROV, mudarStatus, cancelarROV, listarROVs, filtrar, mapaVizinhos, salvarVizinho, estaAberto } from '../rov.js';
+import { novoROV, salvarROV, mudarStatus, cancelarROV, apagarROV, listarROVs, filtrar, mapaVizinhos, salvarVizinho, estaAberto } from '../rov.js';
 import { gerarPdfROV } from '../pdf.js';
 import { autosaver, fmtBR, fmtDataHora, hoje, slugArquivo } from '../util.js';
 import { classeStatus } from './rdoEditor.js';
@@ -158,7 +158,21 @@ export async function viewRovEditor(id, dataNovo) {
         atualizarBadge();
         ir(`#/rov/${rov.id}`, true);
       }
-    }, 'Cancelar este ROV') : null);
+    }, 'Cancelar este ROV') : null,
+    rov.seq ? h('div', { class: 'card' },
+      h('button', {
+        type: 'button', class: 'btn perigo-txt', style: 'width:100%', onclick: async () => {
+          const ok = await confirmar(`Apagar ${rov.codigo}?`,
+            'O ROV, suas fotos e o histórico serão apagados deste aparelho, sem deixar registro (inclusive nos RDOs do dia). Não pode ser desfeito.',
+            'Apagar ROV', true);
+          if (!ok) return;
+          saver.cancel();
+          await apagarROV(rov);
+          atualizarBadge();
+          toast(`${rov.codigo} apagado.`);
+          ir('#/vizinhos', true);
+        }
+      }, `🗑️ Apagar ${rov.codigo}`)) : null);
   return { titulo: rov.codigo || 'Novo ROV', voltar: true, aba: 'vizinhos', el, saver };
 }
 

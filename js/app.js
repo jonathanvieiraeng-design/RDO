@@ -80,6 +80,10 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', () => salvarPendentes());
 
 async function iniciar() {
+  // Limpeza única dos dados de teste (pedido do usuário em 17/11/2026): roda uma vez por aparelho.
+  try {
+    if (localStorage.getItem('limpeza-testes') !== '2026-11-17') { await db.apagarTudo(); localStorage.setItem('limpeza-testes', '2026-11-17'); }
+  } catch (e) { console.warn('limpeza', e); }
   if (db.modoDemo()) { document.getElementById('faixa-demo').hidden = false; document.body.classList.add('demo'); }
   try {
     await db.abrir();
@@ -95,6 +99,19 @@ async function iniciar() {
   }
   if (!location.hash) location.replace('#/hoje');
   rerender();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch((e) => console.warn('SW', e));
+  if ('serviceWorker' in navigator) {
+    // Atualização automática: quando a versão nova assume, a página recarrega sozinha (uma vez).
+    const tinhaControle = !!navigator.serviceWorker.controller;
+    let recarregou = false;
+    navigator.serviceWorker.addEventListener('controllerchange', async () => {
+      if (!tinhaControle || recarregou) return;
+      recarregou = true;
+      await salvarPendentes();
+      location.reload();
+    });
+    navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).then((reg) => {
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    }).catch((e) => console.warn('SW', e));
+  }
 }
 iniciar();

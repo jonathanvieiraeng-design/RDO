@@ -1,6 +1,6 @@
 // Service worker: cache-first de todos os assets. Ao alterar qualquer arquivo do app,
 // incremente VERSAO para que o iPhone baixe a nova versão na próxima abertura com internet.
-const VERSAO = 'rdo-rov-v1.5.0';
+const VERSAO = 'rdo-rov-v1.6.0';
 const ASSETS = [
   './',
   './index.html',

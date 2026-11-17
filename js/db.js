@@ -76,16 +76,22 @@ export async function substituirTudo(dados) {
   return txFim(tx);
 }
 
-/** Apaga TODOS os dados deste app no aparelho (real e demonstração). Não toca em dados de outros apps do mesmo site. */
+/** Apaga TODOS os dados deste app no aparelho (real e demonstração). Não toca em dados de outros apps do mesmo site.
+ *  Primeiro esvazia cada tabela (garantido mesmo se o iOS adiar a exclusão do banco) e depois exclui os bancos. */
 export async function apagarTudo() {
   if (dbp) { try { (await dbp).close(); } catch { /* ok */ } dbp = null; }
   for (const nome of ['rdo-rov', 'rdo-rov-demo']) {
-    await new Promise((res, rej) => {
-      const r = indexedDB.deleteDatabase(nome);
-      r.onsuccess = () => res();
-      r.onerror = () => rej(r.error);
-      r.onblocked = () => res();
-    });
+    try {
+      const d = await new Promise((res, rej) => { const r = indexedDB.open(nome); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+      const nomes = [...d.objectStoreNames];
+      if (nomes.length) {
+        const tx = d.transaction(nomes, 'readwrite');
+        nomes.forEach((s) => tx.objectStore(s).clear());
+        await txFim(tx);
+      }
+      d.close();
+    } catch (e) { console.warn('limpeza', nome, e); }
+    await new Promise((res) => { const r = indexedDB.deleteDatabase(nome); r.onsuccess = r.onerror = r.onblocked = () => res(); });
   }
   try { for (const k of Object.keys(localStorage)) if (k.startsWith('rdo-')) localStorage.removeItem(k); } catch { /* ok */ }
   try { sessionStorage.removeItem('rov-filtros'); } catch { /* ok */ }

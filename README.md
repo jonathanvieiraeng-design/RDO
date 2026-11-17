@@ -73,7 +73,7 @@ powershell -ExecutionPolicy Bypass -File servir-local.ps1
 - Nº do RDO e do ROV são sequenciais (contador atômico no banco). Ao apagar o RDO de nº mais alto, o nº volta a ficar livre.
 - Um RDO por data, sempre editável. Cada PDF gerado é uma nova versão (v01, v02…), indicada no PDF, com o mesmo nome de arquivo. Se o RDO for alterado depois do último PDF, o app avisa e o dia fica amarelo no calendário.
 - Ao gerar o PDF, o app congela a configuração (nomes de funções, áreas etc.) e os ROVs do dia dentro do RDO. Assim o PDF reproduz exatamente o que foi gechado, mesmo após renomear listas ou importar um backup.
-- ROV nunca é excluído: **Cancelar este ROV** exige motivo e entra no histórico. Cada mudança de status grava data, status anterior, novo e nota. "Resolvido" exige data de resolução.
+- ROV pode ser **cancelado** (exige motivo e fica no histórico) ou **apagado** (some sem deixar registro, inclusive dos RDOs). Cada mudança de status grava data, status anterior, novo e nota. "Resolvido" exige data de resolução.
 - Itens de lista já usados não podem ser excluídos, apenas ocultados.
 - Campos vazios saem como "—" ou a seção é omitida (subcontratadas, equipamentos e fotos vazias). Nada é preenchido com valor padrão.
 - `criadoEm`/`atualizadoEm` em ISO 8601 com fuso de São Paulo (`-03:00`).
