@@ -241,3 +241,4 @@ ul.check { margin: 6px 0; padding-left: 20px; font-size: 15px; }
 
 .btn.primario { box-shadow: inset 0 -3px 0 var(--ouro); }
 .badge.cinza { background: #E3ECF4; color: var(--pri); }
+.servico .chips { flex-wrap: wrap; overflow: visible; }

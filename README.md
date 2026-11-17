@@ -104,7 +104,7 @@ powershell -ExecutionPolicy Bypass -File servir-local.ps1
 
 ## Premissas [A VALIDAR]
 
-- Pavimentos padrão (Subsolo, Térreo, 1º a 3º Pav, Cobertura, Lazer, Área externa): edite em Ajustes.
+- Pavimentos do Residencial Monte Fuji (Subsolo, Térreo, G1–G3, Mezanino, 1º a 15º Pav, Churrasqueira/Piscina, Ático, Casa de máquinas, Caixa d'água): edite em Ajustes.
 - Situação do serviço (Iniciado / Em andamento / Concluído), paralisação por chuva, assuntos de ROV e cancelamento de ROV.
 - Dias decorridos contam o dia de início como dia 1; restantes = término − data (negativo = prazo excedido).
 - Numeração das fotos no PDF: primeiro as fotos dos serviços, depois as fotos gerais do dia.
