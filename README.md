@@ -14,7 +14,7 @@ app/
 │   ├── app.js            roteador, abas, persistência
 │   ├── db.js             IndexedDB (dados + fotos em Blob); demo usa banco separado
 │   ├── config.js         dados da obra e listas editáveis
-│   ├── rdo.js            regras do RDO (cópia do dia anterior, fechamento, revisões)
+│   ├── rdo.js            regras do RDO (cópia do dia anterior, versões do PDF, exclusão)
 │   ├── rov.js            regras do ROV (status, histórico, cancelamento, filtros)
 │   ├── pdf.js            PDF do RDO e do ROV (jsPDF)
 │   ├── destino.js        destino do relatório (Fase 2: trocar por Microsoft Graph aqui)
@@ -63,16 +63,16 @@ powershell -ExecutionPolicy Bypass -File servir-local.ps1
 
 ## Uso diário (meta: menos de 5 min)
 
-1. **Hoje → Iniciar RDO.** Efetivo, subcontratadas e equipamentos vêm do último RDO fechado, com faltas zeradas.
+1. **Hoje**: toque na data para abrir o **calendário** (verde = PDF gerado; amarelo = sem PDF ou alterado depois; vermelho = dia útil sem RDO) e escolha o dia. **Iniciar RDO** copia efetivo, subcontratadas e equipamentos do RDO anterior, com faltas zeradas.
 2. Tempo: 2 toques. Efetivo: ajuste com −/+. Serviços: área (chip), descrição (o ditado do teclado funciona), situação e fotos. "Repetir serviços de ontem" copia os itens sem as fotos.
-3. **Fechar RDO do dia.** Aparece um checklist de campos vazios, só como aviso. Depois o PDF é gerado: toque em **Compartilhar… → OneDrive**.
+3. **Gerar PDF do dia.** Aparece um checklist de campos vazios, só como aviso. Toque em **Compartilhar… → OneDrive**. O RDO continua editável: se mudar algo, gere de novo (v02, v03…). O nome do arquivo é o mesmo, para substituir o anterior no OneDrive. **Apagar RDO** fica no fim da tela.
 4. ROV: aba **Vizinhos → + Novo ROV**. O nº ROV-xxx é atribuído na primeira gravação.
 
 ## Regras de rastreabilidade implementadas
 
-- Nº do RDO e do ROV são sequenciais e nunca reaproveitados (contador atômico no banco).
-- RDO fechado fica imutável. **Criar revisão** exige motivo e cria a Rev. 01, 02… como nova versão. A versão anterior continua intacta e acessível no Histórico.
-- No fechamento, o app congela a configuração (nomes de funções, áreas etc.) e os ROVs do dia dentro do RDO. Assim o PDF reproduz exatamente o que foi fechado, mesmo após renomear listas ou importar um backup.
+- Nº do RDO e do ROV são sequenciais (contador atômico no banco). Ao apagar o RDO de nº mais alto, o nº volta a ficar livre.
+- Um RDO por data, sempre editável. Cada PDF gerado é uma nova versão (v01, v02…), indicada no PDF, com o mesmo nome de arquivo. Se o RDO for alterado depois do último PDF, o app avisa e o dia fica amarelo no calendário.
+- Ao gerar o PDF, o app congela a configuração (nomes de funções, áreas etc.) e os ROVs do dia dentro do RDO. Assim o PDF reproduz exatamente o que foi gechado, mesmo após renomear listas ou importar um backup.
 - ROV nunca é excluído: **Cancelar este ROV** exige motivo e entra no histórico. Cada mudança de status grava data, status anterior, novo e nota. "Resolvido" exige data de resolução.
 - Itens de lista já usados não podem ser excluídos, apenas ocultados.
 - Campos vazios saem como "—" ou a seção é omitida (subcontratadas, equipamentos e fotos vazias). Nada é preenchido com valor padrão.
@@ -89,11 +89,11 @@ powershell -ExecutionPolicy Bypass -File servir-local.ps1
 |---|---|---|
 | 1 | Hoje → Iniciar RDO, marcar tempo, +/− no efetivo, 1 serviço com foto | Progresso sobe; "salvo ✓" no topo; totais de presentes e faltas corretos |
 | 2 | Fechar app (deslizar), reabrir | Tudo continua preenchido |
-| 3 | Fechar RDO do dia | Checklist de vazios; PDF `RDO_MonteFuji_AAAA-MM-DD_n001.pdf`; folha de compartilhamento com OneDrive |
+| 3 | Gerar PDF do dia | Checklist de vazios; PDF `RDO_MonteFuji_AAAA-MM-DD_n001.pdf` (Versão 01); folha de compartilhamento com OneDrive |
 | 4 | Conferir PDF | A4, cabeçalho e rodapé em todas as páginas, "Página X de Y", CREA, foto numerada |
-| 5 | Tentar editar o RDO fechado | Campos travados |
-| 6 | Histórico → RDO → Criar revisão (motivo vazio, depois preenchido) | Bloqueia sem motivo; abre Rev. 01; ao fechar gera `..._rev01.pdf` com o motivo; Rev. 00 continua no Histórico |
-| 7 | Dia seguinte (seta ›) → Iniciar | Efetivo copiado, faltas = 0 |
+| 5 | Alterar o RDO depois do PDF | Aviso "gere de novo"; dia amarelo no calendário; botão "Gerar PDF v02" |
+| 6 | Gerar de novo | PDF com "Versão 02", mesmo nome de arquivo; dia verde no calendário |
+| 7 | Calendário → dia seguinte → Iniciar | Efetivo copiado, faltas = 0 |
 | 8 | Vizinhos → Novo ROV, cadastrar vizinho na hora, mudar status para Resolvido | Pede data de resolução; histórico com 2 linhas; contador de abertos atualiza |
 | 9 | ROV com a data de um RDO aberto | Aparece na seção "Ocorrências de vizinhos" do RDO e no PDF |
 | 10 | Filtros De/Até, status, vizinho, assunto → Relatório do filtro | PDF `ROV_MonteFuji_ini_a_fim.pdf` com resumo, fichas, histórico e evidências |

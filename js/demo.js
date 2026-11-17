@@ -25,13 +25,13 @@ export async function semearDemo() {
   // Um RDO fechado de exemplo na mesma data (para testar cópia do efetivo e revisão)
   const numero = await db.proximoSeq('rdo');
   const rdo = {
-    id: uid(), numero, rev: 0, revMotivo: '', revDe: null, data: '2026-06-16', status: 'fechado',
+    id: uid(), numero, data: '2026-06-16', status: 'gerado', versao: 1, pdfEm: '2026-06-16T18:00:00-03:00', alteradoAposPdf: false,
     tempo: { manha: 'Sol', tarde: 'Nublado', paralisacao: 'Não', paralisacaoObs: '' },
     efetivo: { fun_1: { presente: 1, faltas: 0, obs: '' }, fun_5: { presente: 1, faltas: 0, obs: '' }, fun_8: { presente: 4, faltas: 1, obs: '1 atestado' }, fun_9: { presente: 6, faltas: 0, obs: '' } },
     subcontratadas: {}, equipamentos: { eqp_7: { qtd: 1 } },
     servicos: [{ id: uid(), areaIds: ['pav_2'], descricao: 'Limpeza do terreno com escavadeira: remoção de alvenaria e de fragmentos de vigas remanescentes da construção pré-existente, junto ao muro divisório dos fundos.', situacao: 'Em andamento', fotos: [] }],
     fiscalizacao: '', ocorrencias: 'Contato da vizinha Marisa (fundos) sobre vibração durante a operação da escavadeira — ver ROV-001.', producao: '', fotos: [],
-    copiadoDe: null, fechadoEm: '2026-06-16T18:00:00-03:00',
+    copiadoDe: null,
     rovSnapshot: [resumoROV(rov, cfg, await mapaVizinhos())], cfgSnapshot: structuredClone(cfg),
     criadoEm: '2026-06-16T07:30:00-03:00', atualizadoEm: '2026-06-16T18:00:00-03:00'
   };

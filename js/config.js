@@ -33,7 +33,7 @@ const PADRAO = {
   subcontratadas: [['sub_1', 'Elevadores'], ['sub_2', 'Instalação de gás'], ['sub_3', 'Instalação de combate a incêndio']],
   equipamentos: [['eqp_1', 'Serra de bancada'], ['eqp_2', 'Vibradores'], ['eqp_3', 'Mangotes do vibrador'], ['eqp_5', 'Serra mármore'],
     ['eqp_6', 'Guincho'], ['eqp_7', 'Betoneira/Masseira/Silo'], ['eqp_8', 'Balancins'], ['eqp_9', 'Nível a laser'],
-    ['eqp_10', 'Furadeira de impacto'], ['eqp_11', 'Policorte'], ['eqp_12', 'Serra circular']],
+    ['eqp_10', 'Furadeira de impacto'], ['eqp_11', 'Policorte'], ['eqp_12', 'Serra circular'], ['eqp_13', 'Grua']],
   assuntos: [['ass_1', 'Vibração'], ['ass_2', 'Ruído'], ['ass_3', 'Poeira'], ['ass_4', 'Sujeira na via'], ['ass_5', 'Dano em imóvel'],
     ['ass_6', 'Horário'], ['ass_7', 'Outros']]
 };
@@ -90,7 +90,7 @@ export function configPadrao() {
     responsavel: 'Jonathan Vieira – Eng. Civil',
     registro: 'CREA-SP 5070007635',
     listas: listasPadrao(),
-    migracao: 1,
+    migracao: 2,
     criadoEm: agora,
     atualizadoEm: agora
   };
@@ -103,7 +103,13 @@ export async function getConfig() {
   if (!c) { c = configPadrao(); await db.put('config', c); }
   const pad = listasPadrao();
   for (const k of Object.keys(LISTAS)) if (!Array.isArray(c.listas?.[k])) { c.listas = c.listas || {}; c.listas[k] = pad[k]; }
-  if (await migrarListas(c)) await db.put('config', c);
+  let mudou = await migrarListas(c);
+  // Migração 2 (v1.5.0): inclui Grua nos equipamentos.
+  if ((c.migracao || 0) < 2) {
+    if (!c.listas.equipamentos.some((i) => i.id === 'eqp_13' || i.nome.trim().toLowerCase() === 'grua')) c.listas.equipamentos.push({ id: 'eqp_13', nome: 'Grua', oculto: false });
+    c.migracao = 2; mudou = true;
+  }
+  if (mudou) await db.put('config', c);
   cache = c;
   return c;
 }

@@ -131,6 +131,7 @@ export function autosaver(fn, ms = 450) {
   let t = null;
   const s = {
     touch() { clearTimeout(t); pendentes.add(s); avisa('salvando'); t = setTimeout(() => s.flush(), ms); },
+    cancel() { clearTimeout(t); t = null; pendentes.delete(s); },
     async flush() {
       clearTimeout(t); t = null;
       if (!pendentes.has(s)) return;

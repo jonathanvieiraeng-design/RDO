@@ -279,21 +279,22 @@ const demo = () => db.modoDemo();
 export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
   const d = new Doc(await carregarFontes(), await carregarLogo());
   const num = pad(rdo.numero, 3);
-  const rev = rdo.rev ? `Rev. ${pad(rdo.rev)}` : '';
+  const gerado = rdo.status === 'gerado' || rdo.status === 'fechado';
+  const versao = gerado && rdo.versao ? `Versão ${pad(rdo.versao)}` : '';
   const dec = diasDecorridos(cfg, rdo.data), rest = diasRestantes(cfg, rdo.data);
 
   // 1. Cabeçalho
   d.f('bold', 15);
   d.doc.text('RELATÓRIO DIÁRIO DE OBRA – RDO', M, d.y + 5);
   d.y += 9;
-  if (rdo.status !== 'fechado' || demo()) {
-    d.paragrafo(rdo.status !== 'fechado' ? 'RASCUNHO – RDO ainda não fechado (prévia sem validade).' : 'DOCUMENTO DE DEMONSTRAÇÃO – dados fictícios.', { tam: 9.5, estilo: 'bold', cor: C.medio });
+  if (!gerado || demo()) {
+    d.paragrafo(!gerado ? 'PRÉVIA – rascunho, sem validade.' : 'DOCUMENTO DE DEMONSTRAÇÃO – dados fictícios.', { tam: 9.5, estilo: 'bold', cor: C.medio });
   }
   const kv = (a, b, c, e) => [{ c: [a, b, c, e] }];
   d.tabela(
     [{ t: '', w: 0.17 }, { t: '', w: 0.38 }, { t: '', w: 0.17 }, { t: '', w: 0.28 }],
     [
-      ...kv('Obra', cfg.nome, 'Nº do RDO', num + (rev ? ` – ${rev}` : '')),
+      ...kv('Obra', cfg.nome, 'Nº do RDO', num + (versao ? ` – ${versao}` : '')),
       ...kv('Endereço', cfg.endereco, 'Data', fmtBR(rdo.data)),
       ...kv('Contratante', cfg.contratante, 'Dia da semana', diaSemana(rdo.data)),
       ...kv('Unidade construtiva', cfg.unidade, 'Dias decorridos', fmtDias(dec)),
@@ -301,7 +302,6 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
     ].map((l) => ({ ...l, c: l.c })),
     { cabecalho: false, tam: 9.5 }
   );
-  if (rdo.rev) d.paragrafo(`Revisão ${pad(rdo.rev)} – Motivo: ${rdo.revMotivo || '—'}`, { tam: 9.5, estilo: 'bold' });
 
   // 2. Tempo
   d.tituloSecao('Condições do tempo');
@@ -407,11 +407,12 @@ export async function gerarPdfRDO(rdo, cfg, rovsAoVivo = null) {
   }
 
   // 9. Fechamento (rodapé)
-  const fech = rdo.fechadoEm ? `Fechado em ${fmtDataHora(rdo.fechadoEm)}` : `Rascunho gerado em ${fmtDataHora(nowISO())}`;
+  const quando = rdo.pdfEm || rdo.fechadoEm;
+  const fech = gerado && quando ? `${versao} gerada em ${fmtDataHora(quando)}` : `Prévia gerada em ${fmtDataHora(nowISO())}`;
   return d.finalizar(
     {
       esq: 'RELATÓRIO DIÁRIO DE OBRA – RDO' + (demo() ? ' [DEMONSTRAÇÃO]' : ''),
-      dir: `Nº ${num}${rev ? ' – ' + rev : ''}`,
+      dir: `Nº ${num}${versao ? ' – ' + versao : ''}`,
       esq2: cfg.nome || '—',
       dir2: `${fmtBR(rdo.data)} – ${diaSemana(rdo.data)}`
     },

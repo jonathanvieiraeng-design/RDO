@@ -1,4 +1,6 @@
-// Serviço do módulo RDO: criação, cópia do dia anterior, fechamento, revisões, progresso.
+// Serviço do módulo RDO: criação, cópia do dia anterior, geração do PDF (versões), exclusão, progresso.
+// Um RDO por data, sempre editável. Cada "Gerar PDF" cria uma nova versão (v01, v02…) com o mesmo nome de
+// arquivo, para substituir o anterior no OneDrive.
 import * as db from './db.js';
 import { nowISO, uid, pad, slugArquivo } from './util.js';
 import { rovsDoDia, mapaVizinhos, resumoROV } from './rov.js';
@@ -6,54 +8,54 @@ import { areasDe } from './config.js';
 
 export function nomeArquivoRDO(rdo, cfg) {
   const sigla = slugArquivo(cfg.siglaArquivo || cfg.nome);
-  return `RDO_${sigla}_${rdo.data}_n${pad(rdo.numero, 3)}${rdo.rev ? '_rev' + pad(rdo.rev) : ''}.pdf`;
+  return `RDO_${sigla}_${rdo.data}_n${pad(rdo.numero, 3)}.pdf`;
 }
 
-/** Última versão (maior revisão) de cada nº de RDO. */
-function ultimasVersoes(lista) {
+/** Converte registros do formato antigo (fechado/revisão) para o atual. */
+function normalizar(r) {
+  if (!r) return r;
+  if (r.status === 'fechado') { r.status = 'gerado'; r.versao = r.versao || (r.rev || 0) + 1; r.pdfEm = r.pdfEm || r.fechadoEm; }
+  if (r.versao == null) r.versao = 0;
+  return r;
+}
+/** Situação para o calendário e listas: 'gerado' (PDF em dia), 'pendente' (sem PDF ou alterado depois). */
+export function situacaoRDO(r) {
+  normalizar(r);
+  return r.status === 'gerado' && !r.alteradoAposPdf ? 'gerado' : 'pendente';
+}
+
+/** Registro atual de cada data (se houver versões antigas de revisão, fica a mais recente). */
+function atuais(lista) {
   const m = new Map();
-  for (const r of lista) { const a = m.get(r.numero); if (!a || r.rev > a.rev) m.set(r.numero, r); }
-  return [...m.values()];
+  for (const r of lista) { const a = m.get(r.data); if (!a || (r.rev || 0) > (a.rev || 0)) m.set(r.data, r); }
+  return [...m.values()].map(normalizar);
 }
 
 export async function rdoPorData(data) {
   const l = await db.porIndice('rdos', 'data', data);
-  if (!l.length) return null;
-  return l.sort((a, b) => b.rev - a.rev)[0];
+  return l.length ? atuais(l)[0] : null;
 }
-export async function versoesDe(numero) {
-  return (await db.porIndice('rdos', 'numero', numero)).sort((a, b) => b.rev - a.rev);
-}
-export async function todasUltimasVersoes() {
-  return ultimasVersoes(await db.all('rdos')).sort((a, b) => b.data.localeCompare(a.data));
+export async function todosRDOs() {
+  return atuais(await db.all('rdos')).sort((a, b) => b.data.localeCompare(a.data));
 }
 
-/** Último RDO fechado antes da data (versão fechada mais recente de cada nº). */
-export async function ultimoFechado(data) {
-  const fechados = ultimasVersoes((await db.all('rdos')).filter((r) => r.status === 'fechado'))
-    .filter((r) => r.data < data)
-    .sort((a, b) => b.data.localeCompare(a.data));
-  return fechados[0] || null;
-}
-/** Último RDO anterior à data (fechado ou não) — usado em "Repetir serviços de ontem". */
+/** Último RDO anterior à data — fonte da cópia de efetivo e de "Repetir serviços de ontem". */
 export async function ultimoAnterior(data) {
-  const l = ultimasVersoes(await db.all('rdos')).filter((r) => r.data < data).sort((a, b) => b.data.localeCompare(a.data));
-  return l[0] || null;
+  return (await todosRDOs()).find((r) => r.data < data) || null;
 }
 
 export async function criarRDO(data) {
   const existente = await rdoPorData(data);
   if (existente) return existente;
-  const ult = await ultimoFechado(data);
+  const ult = await ultimoAnterior(data);
   const agora = nowISO();
   const rdo = {
-    id: uid(), numero: await db.proximoSeq('rdo'), rev: 0, revMotivo: '', revDe: null,
-    data, status: 'aberto',
+    id: uid(), numero: await db.proximoSeq('rdo'), data, status: 'aberto', versao: 0, pdfEm: null, alteradoAposPdf: false,
     tempo: { manha: null, tarde: null, paralisacao: null, paralisacaoObs: '' },
     efetivo: {}, subcontratadas: {}, equipamentos: {},
     servicos: [], fiscalizacao: '', ocorrencias: '', producao: '', fotos: [],
     copiadoDe: ult ? ult.id : null,
-    fechadoEm: null, rovSnapshot: null, cfgSnapshot: null,
+    rovSnapshot: null, cfgSnapshot: null,
     criadoEm: agora, atualizadoEm: agora
   };
   if (ult) {
@@ -66,9 +68,19 @@ export async function criarRDO(data) {
 }
 
 export async function salvarRDO(rdo) {
-  if (rdo.status === 'fechado') throw new Error('RDO fechado não pode ser alterado. Crie uma revisão.');
+  normalizar(rdo);
+  if (rdo.status === 'gerado') rdo.alteradoAposPdf = true;
   rdo.atualizadoEm = nowISO();
   await db.put('rdos', rdo);
+}
+
+/** Apaga o RDO da data (todas as versões, PDF e fotos). Se era o último nº emitido, o nº volta a ficar livre. */
+export async function apagarRDO(rdo) {
+  const mesmos = (await db.porIndice('rdos', 'data', rdo.data));
+  for (const r of mesmos) { await db.del('rdos', r.id); await db.del('pdfs', r.id); }
+  const seq = await db.getMeta('seq_rdo');
+  if (seq === rdo.numero) await db.setMeta('seq_rdo', seq - 1);
+  await limparFotosOrfas();
 }
 
 export function totaisEfetivo(rdo) {
@@ -112,52 +124,35 @@ export function checklist(rdo) {
   return p;
 }
 
-/** Fecha: congela configuração e ROVs do dia, gera o PDF e só então grava (se o PDF falhar, nada muda). */
-export async function fecharRDO(rdo, cfg, gerarPdf) {
+/** Gera uma nova versão do PDF: congela configuração e ROVs do dia, gera o PDF e só então grava. */
+export async function gerarVersao(rdo, cfg, gerarPdf) {
+  normalizar(rdo);
   const viz = await mapaVizinhos();
   const rovs = (await rovsDoDia(rdo.data)).map((r) => resumoROV(r, cfg, viz));
-  const fechado = structuredClone(rdo);
-  fechado.status = 'fechado';
-  fechado.fechadoEm = nowISO();
-  fechado.rovSnapshot = rovs;
-  fechado.cfgSnapshot = structuredClone(cfg);
-  const blob = await gerarPdf(fechado, fechado.cfgSnapshot);
-  const nome = nomeArquivoRDO(fechado, fechado.cfgSnapshot);
-  fechado.atualizadoEm = fechado.fechadoEm;
-  await db.put('rdos', fechado);
-  await db.put('pdfs', { id: fechado.id, blob, nome, criadoEm: nowISO() });
-  Object.assign(rdo, fechado);
+  const novo = structuredClone(rdo);
+  Object.assign(novo, { status: 'gerado', versao: (rdo.versao || 0) + 1, pdfEm: nowISO(), alteradoAposPdf: false, rovSnapshot: rovs, cfgSnapshot: structuredClone(cfg) });
+  const blob = await gerarPdf(novo, novo.cfgSnapshot);
+  const nome = nomeArquivoRDO(novo, novo.cfgSnapshot);
+  novo.atualizadoEm = novo.pdfEm;
+  await db.put('rdos', novo);
+  await db.put('pdfs', { id: novo.id, blob, nome, criadoEm: novo.pdfEm });
+  Object.assign(rdo, novo);
   return { blob, nome };
 }
 
-/** PDF guardado; se não houver (ex.: após importar backup), é regenerado a partir dos dados congelados. */
+/** Último PDF gerado; se não houver (ex.: após importar backup), é refeito a partir dos dados congelados. */
 export async function pdfDoRDO(rdo, cfgAtual, gerarPdf) {
+  normalizar(rdo);
   const salvo = await db.get('pdfs', rdo.id);
   if (salvo) return salvo;
   const cfg = rdo.cfgSnapshot || cfgAtual;
   const blob = await gerarPdf(rdo, cfg);
   const reg = { id: rdo.id, blob, nome: nomeArquivoRDO(rdo, cfg), criadoEm: nowISO() };
-  if (rdo.status === 'fechado') await db.put('pdfs', reg);
+  if (rdo.status === 'gerado') await db.put('pdfs', reg);
   return reg;
 }
 
-/** Revisão: nova versão aberta, com motivo; a versão fechada anterior fica intacta. */
-export async function criarRevisao(rdo, motivo) {
-  const versoes = await versoesDe(rdo.numero);
-  if (versoes[0].id !== rdo.id) throw new Error('Só é possível revisar a versão mais recente.');
-  if (rdo.status !== 'fechado') throw new Error('A versão atual ainda está aberta.');
-  const agora = nowISO();
-  const nova = structuredClone(rdo);
-  Object.assign(nova, {
-    id: uid(), rev: rdo.rev + 1, revMotivo: motivo, revDe: rdo.id, status: 'aberto',
-    fechadoEm: null, rovSnapshot: null, cfgSnapshot: null, criadoEm: agora, atualizadoEm: agora
-  });
-  nova.servicos.forEach((s) => { s.id = s.id || uid(); });
-  await db.put('rdos', nova);
-  return nova;
-}
-
-/** Remove fotos que nenhum registro referencia (ex.: removidas antes de fechar). */
+/** Remove fotos que nenhum registro referencia. */
 export async function limparFotosOrfas() {
   const usadas = new Set();
   for (const r of await db.all('rdos')) {

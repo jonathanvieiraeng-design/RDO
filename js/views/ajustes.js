@@ -6,7 +6,7 @@ import { gerarBackup, marcarBackup, lerBackup, aplicarBackup } from '../backup.j
 import { autosaver, fmtDataHora, diasEntre, hoje } from '../util.js';
 import { ir } from '../app.js';
 
-export const VERSAO_APP = '1.4.0';
+export const VERSAO_APP = '1.5.0';
 
 export async function viewAjustes() {
   const cfg = await getConfig();
@@ -126,7 +126,7 @@ export async function viewLista(chave) {
   return {
     titulo: LISTAS[chave], voltar: true, aba: 'ajustes', saver,
     el: h('div', null,
-      h('p', { class: 'nota' }, 'Itens já usados em algum registro não podem ser excluídos — apenas ocultados. Renomear não altera RDOs já fechados.'),
+      h('p', { class: 'nota' }, 'Itens já usados em algum registro não podem ser excluídos — apenas ocultados. Renomear não altera PDFs já gerados.'),
       h('button', { type: 'button', class: 'btn primario', onclick: async () => { const n = await perguntar('Novo item', { rotulo: 'Nome', obrigatorio: true, multilinha: false, ok: 'Adicionar' }); if (n) { itens.push(novoItem(n)); saver.touch(); render(); } } }, '+ Adicionar item'),
       cont)
   };

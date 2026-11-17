@@ -1,11 +1,11 @@
-// Editor do RDO (também usado em modo somente leitura para RDOs fechados).
+// Editor do RDO (também usado em modo somente leitura na tela de PDF).
 import { h, campo, stepper, segmentado, multiSelecao, areaTexto, texto, secao, galeria, confirmar, toast } from '../ui.js';
 import { TEMPO, SITUACOES, itensPara, nomeItem, areasDe, nomesAreas } from '../config.js';
 import { salvarRDO, progresso, totaisEfetivo, ultimoAnterior } from '../rdo.js';
 import { autosaver, uid, pad, fmtBR, diaSemana, diasDecorridos, diasRestantes, fmtDias, fmtDataHora } from '../util.js';
 
 export function editorRDO(rdo, cfg, { readonly = false, rovsDia = [] } = {}) {
-  const cfgUso = rdo.cfgSnapshot || cfg;
+  const cfgUso = readonly ? (rdo.cfgSnapshot || cfg) : cfg;
   const saver = autosaver(() => salvarRDO(rdo));
   const secoes = {};
   const mudou = () => { if (!readonly) saver.touch(); atualiza(); };
@@ -16,12 +16,12 @@ export function editorRDO(rdo, cfg, { readonly = false, rovsDia = [] } = {}) {
   const dec = diasDecorridos(cfgUso, rdo.data), rest = diasRestantes(cfgUso, rdo.data);
   const cab = h('div', { class: 'card cab-rdo' },
     h('div', { class: 'cab-linha' },
-      h('div', null, h('div', { class: 'cab-num' }, `RDO nº ${pad(rdo.numero, 3)}`, rdo.rev ? h('span', { class: 'tag' }, `Rev. ${pad(rdo.rev)}`) : null),
+      h('div', null, h('div', { class: 'cab-num' }, `RDO nº ${pad(rdo.numero, 3)}`, rdo.versao ? h('span', { class: 'tag' }, `PDF v${pad(rdo.versao)}`) : null),
         h('div', { class: 'cab-data' }, `${fmtBR(rdo.data)} · ${diaSemana(rdo.data)}`)),
       h('div', { class: 'cab-dias' }, h('div', null, 'Decorridos ', h('b', null, fmtDias(dec))), h('div', null, 'Restantes ', h('b', null, fmtDias(rest))))),
-    rdo.rev ? h('p', { class: 'nota' }, `Motivo da revisão: ${rdo.revMotivo}`) : null,
+    estadoPdf(rdo),
     readonly
-      ? h('p', { class: 'nota' }, `🔒 Fechado em ${fmtDataHora(rdo.fechadoEm)} — somente leitura.`)
+      ? null
       : h('div', { class: 'progresso' }, barra, progTxt),
     (!cfgUso.inicio || !cfgUso.termino) && !readonly ? h('p', { class: 'nota' }, 'Informe início e término da obra em Ajustes para calcular os dias.') : null);
 
@@ -181,4 +181,13 @@ export function blocoVizinhanca(rovs, data, cfg, { podeNovo = true, congelado = 
 export function classeStatus(r) {
   if (r.cancelado) return 'cinza';
   return { 'Não resolvido': 'vermelho', 'Em andamento': 'amarelo', 'Resolvido': 'verde' }[r.status] || 'cinza';
+}
+
+/** Situação do PDF no cabeçalho do RDO. */
+function estadoPdf(rdo) {
+  if (!rdo.versao) return h('p', { class: 'nota' }, 'PDF ainda não gerado.');
+  const quando = fmtDataHora(rdo.pdfEm || rdo.fechadoEm);
+  return rdo.alteradoAposPdf
+    ? h('p', { class: 'aviso' }, `PDF v${pad(rdo.versao)} gerado em ${quando}. Houve alterações depois: gere de novo para atualizar.`)
+    : h('p', { class: 'nota ok-txt' }, `✓ PDF v${pad(rdo.versao)} gerado em ${quando}.`);
 }
