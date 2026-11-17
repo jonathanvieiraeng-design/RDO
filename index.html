@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1d3d5c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="RDO">
+  <meta name="format-detection" content="telephone=no">
+  <title>RDO + ROV</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header id="topo">
+    <button id="voltar" type="button" aria-label="Voltar" hidden>‹</button>
+    <h1 id="titulo">RDO</h1>
+    <span id="salvo" aria-live="polite"></span>
+  </header>
+  <div id="faixa-demo" hidden>MODO DEMONSTRAÇÃO — dados fictícios, separados dos reais</div>
+  <main id="main"></main>
+  <div id="barra-acao"></div>
+  <nav id="abas">
+    <a href="#/hoje" data-aba="hoje"><span class="ic">📋</span><span>Hoje</span></a>
+    <a href="#/vizinhos" data-aba="vizinhos"><span class="ic">🏘️</span><span>Vizinhos</span><b id="badge-rov" hidden></b></a>
+    <a href="#/historico" data-aba="historico"><span class="ic">🗂️</span><span>Histórico</span></a>
+    <a href="#/ajustes" data-aba="ajustes"><span class="ic">⚙️</span><span>Ajustes</span></a>
+  </nav>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
